@@ -1,37 +1,9 @@
-const bcrypt = require("bcryptjs")
-const jwt = require("jsonwebtoken")
-require("dotenv").config()
-const User = require("../models/userModel")
-const {
-  signupValidation,
-  loginValidation,
-} = require("../validation/validationModel")
+const UserService = require("../service/userService")
 
 module.exports = class UserController {
   static async newLogin(req, res) {
     try {
-      //validate login
-      await loginValidation(req.body)
-
-      //checking for the user email
-      const user = await User.findOne({ email: req.body.email })
-
-      if (!user) {
-        return res
-          .status(400)
-          .json({ success: false, error: "Invalid Email (or Password)" })
-      }
-
-      //Password check
-      const validPass = await bcrypt.compare(req.body.password, user.password)
-      if (!validPass) {
-        return res
-          .status(400)
-          .json({ success: false, error: "Invalid (Email or) Password" })
-      }
-
-      const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
-
+      const { token, user } = await UserService.newLogin(req.body)
       res
         .status(200)
         .header("auth-token", token)
@@ -46,16 +18,8 @@ module.exports = class UserController {
 
   static async newSignup(req, res) {
     try {
-      //validate data
-      await signupValidation(req.body)
-      const user = new User({
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        password: req.body.password,
-      })
+      const newUser = await UserService.newSignup(req.body)
 
-      const newUser = await user.save()
       return res.status(200).json({
         success: true,
         data: { userID: newUser._id, email: newUser.email },
@@ -63,5 +27,9 @@ module.exports = class UserController {
     } catch (err) {
       res.status(400).json({ success: false, error: err.message })
     }
+  }
+
+  static async getPosts(req, res) {
+    res.json({ post: { title: "my first post", description: "random data" } })
   }
 }
