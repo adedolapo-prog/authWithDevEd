@@ -1,7 +1,8 @@
 const express = require("express")
 const app = express()
 const PORT = process.env.PORT || 5000
-const router = require("./routes/auth")
+const authRouter = require("./routes/auth")
+const postRouter = require("./routes/posts")
 const connectDB = require("./dbConnect")
 
 //connect db
@@ -12,7 +13,8 @@ app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
 //import route
-app.use("/api/user", router)
+app.use("/api/user", authRouter)
+app.use("/api/posts", postRouter)
 
 //connect database
 

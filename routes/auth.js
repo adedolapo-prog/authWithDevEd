@@ -1,5 +1,7 @@
 const router = require("express").Router()
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+require("dotenv").config()
 const User = require("../models/userModel")
 const {
   signupValidation,
@@ -51,10 +53,15 @@ router.post("/login", async (req, res) => {
         .json({ success: false, error: "Invalid (Email or) Password" })
     }
 
-    res.status(200).json({
-      loginSuccess: true,
-      data: { userID: user._id, email: user.email },
-    })
+    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
+
+    res
+      .status(200)
+      .header("auth-token", token)
+      .json({
+        loginSuccess: true,
+        data: { userID: user._id, email: user.email },
+      })
   } catch (err) {
     res.status(400).json({ success: false, error: err.message })
   }
