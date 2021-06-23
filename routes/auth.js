@@ -1,6 +1,10 @@
 const router = require("express").Router()
+const bcrypt = require("bcryptjs")
 const User = require("../models/userModel")
-const signupValidation = require("../validation/validationModel")
+const {
+  signupValidation,
+  loginValidation,
+} = require("../validation/validationModel")
 
 //post request for Sign Up
 router.post("/signup", async (req, res) => {
@@ -15,14 +19,45 @@ router.post("/signup", async (req, res) => {
     })
 
     const newUser = await user.save()
-    return res.status(200).json({ success: true, data: newUser })
+    return res.status(200).json({
+      success: true,
+      data: { userID: newUser._id, email: newUser.email },
+    })
   } catch (err) {
     res.status(400).json({ success: false, error: err.message })
   }
 })
 
-router.post("/login", (req, res) => {
-  res.send("LOGIN")
+//LOGIN
+router.post("/login", async (req, res) => {
+  try {
+    //validate login
+    await loginValidation(req.body)
+
+    //checking for the user email
+    const user = await User.findOne({ email: req.body.email })
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid Email (or Password)" })
+    }
+
+    //Password check
+    const validPass = await bcrypt.compare(req.body.password, user.password)
+    if (!validPass) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid (Email or) Password" })
+    }
+
+    res.status(200).json({
+      loginSuccess: true,
+      data: { userID: user._id, email: user.email },
+    })
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message })
+  }
 })
 
 module.exports = router
